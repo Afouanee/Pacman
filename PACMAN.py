@@ -90,7 +90,7 @@ def SetInfo2(x,y,info):
    if x >= LTBL : return
    if y >= LTBL : return
    TBL2[x][y] = info
-   
+
 
 
 ##############################################################################
@@ -335,8 +335,14 @@ def PlayOneTurn():
    
    if not PAUSE_FLAG : 
       iteration += 1
-      if iteration % 2 == 0 :   IAPacman()
-      else:                     IAGhosts()
+      if iteration % 2 == 0 :   
+         IAPacman()
+         # Si Pac-Man se trouve sur une case contenant une Pac-gomme
+         # On retire la Pac-gomme
+         if GUM[PacManPos[0]][PacManPos[1]] == 1:
+            GUM[PacManPos[0]][PacManPos[1]] = 0
+      else:                     
+         IAGhosts()
    
    Affiche(PacmanColor = "yellow", message = "message")  
  
