@@ -52,7 +52,8 @@ def PlacementsGUM():  # placements des pacgums
             
 GUM = PlacementsGUM()   
    
-   
+# variable pour le score
+score = 0     
       
 
 PacManPos = [5,5]
@@ -62,7 +63,6 @@ Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "pink"  ]   )
 Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "orange"] )
 Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "cyan"  ]   )
 Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "red"   ]     )         
-
 
 
 ##############################################################################
@@ -269,6 +269,9 @@ def Affiche(PacmanColor,message):
    
    canvas.create_text(screeenWidth // 2, screenHeight- 50 , text = "PAUSE : PRESS SPACE", fill ="yellow", font = PoliceTexte)
    canvas.create_text(screeenWidth // 2, screenHeight- 20 , text = message, fill ="yellow", font = PoliceTexte)
+
+   # Affichage du score
+   canvas.create_text(screeenWidth // 2, 30, text=f"Score: {score}", fill="white", font=PoliceTexte)
    
  
 AfficherPage(0)
@@ -331,7 +334,7 @@ def IAGhosts():
 
 iteration = 0
 def PlayOneTurn():
-   global iteration
+   global iteration, score
    
    if not PAUSE_FLAG : 
       iteration += 1
@@ -341,6 +344,7 @@ def PlayOneTurn():
          # On retire la Pac-gomme
          if GUM[PacManPos[0]][PacManPos[1]] == 1:
             GUM[PacManPos[0]][PacManPos[1]] = 0
+            score += 100 # +100 pour chaque pac-gomme mangé
       else:                     
          IAGhosts()
    
