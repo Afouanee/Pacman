@@ -51,10 +51,7 @@ def PlacementsGUM():  # placements des pacgums
    return GUM
             
 GUM = PlacementsGUM()   
-   
-# variable pour le score
-score = 0     
-      
+
 
 PacManPos = [5,5]
 
@@ -63,6 +60,38 @@ Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "pink"  ]   )
 Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "orange"] )
 Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "cyan"  ]   )
 Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "red"   ]     )         
+
+
+# variable pour le score
+score = 0  
+
+
+# IA PACMAN
+
+# Définition des constantes
+G = 1000  # Valeur pour les murs
+M = LARGEUR * HAUTEUR  # Valeur pour les espaces vides
+
+# Fonction pour initialiser la carte des distances
+def initialiser_carte_distances(TBL, GUM):
+    carte_distances = np.full(TBL.shape, M)
+    for x in range(LARGEUR):
+        for y in range(HAUTEUR):
+            if TBL[x][y] == 1:  # Mur
+                carte_distances[x][y] = G
+            elif GUM[x][y] == 1:  # Pac-gomme
+                carte_distances[x][y] = 0
+    return carte_distances
+
+# Initialisation de la carte des distances
+carte_distances = initialiser_carte_distances(TBL, GUM)
+
+# Affichage de la carte des distances initiale pour débogage
+for y in range(HAUTEUR):
+    for x in range(LARGEUR):
+        print(f"{carte_distances[x][y]:4}", end="")
+    print()
+
 
 
 ##############################################################################
@@ -271,7 +300,7 @@ def Affiche(PacmanColor,message):
    canvas.create_text(screeenWidth // 2, screenHeight- 20 , text = message, fill ="yellow", font = PoliceTexte)
 
    # Affichage du score
-   canvas.create_text(screeenWidth // 2, 30, text=f"Score: {score}", fill="white", font=PoliceTexte)
+   canvas.create_text(screeenWidth // 7, screenHeight- 40, text=f"Score: {score}", fill="white", font=PoliceTexte)
    
  
 AfficherPage(0)
