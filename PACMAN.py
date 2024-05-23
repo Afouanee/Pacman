@@ -371,9 +371,10 @@ def PlayOneTurn():
          IAPacman()
          # Si Pac-Man se trouve sur une case contenant une Pac-gomme
          # On retire la Pac-gomme
+         # +100 pour chaque pac-gomme mangé
          if GUM[PacManPos[0]][PacManPos[1]] == 1:
             GUM[PacManPos[0]][PacManPos[1]] = 0
-            score += 100 # +100 pour chaque pac-gomme mangé
+            score += 100 
       else:                     
          IAGhosts()
    
