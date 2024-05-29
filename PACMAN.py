@@ -72,26 +72,6 @@ score = 0
 G = 1000  # Valeur pour les murs
 M = LARGEUR * HAUTEUR  # Valeur pour les espaces vides
 
-# Fonction pour initialiser la carte des distances
-def initialiser_carte_distances(TBL, GUM):
-    carte_distances = np.full(TBL.shape, M)
-    for x in range(LARGEUR):
-        for y in range(HAUTEUR):
-            if TBL[x][y] == 1:  # Mur
-                carte_distances[x][y] = G
-            elif GUM[x][y] == 1:  # Pac-gomme
-                carte_distances[x][y] = 0
-    return carte_distances
-
-# Initialisation de la carte des distances
-carte_distances = initialiser_carte_distances(TBL, GUM)
-
-# Affichage de la carte des distances initiale pour débogage
-for y in range(HAUTEUR):
-    for x in range(LARGEUR):
-        print(f"{carte_distances[x][y]:4}", end="")
-    print()
-
 
 
 ##############################################################################
@@ -209,7 +189,7 @@ animPacman = [ 5,10,15,10,5]
 
 
 def Affiche(PacmanColor,message):
-   global anim_bouche
+   global anim_bouche, score
    
    def CreateCircle(x,y,r,coul):
       canvas.create_oval(x-r,y-r,x+r,y+r, fill=coul, width  = 0)
@@ -330,7 +310,7 @@ def GhostsPossibleMove(x,y):
    return L
    
 def IAPacman():
-   global PacManPos, Ghosts
+   global PacManPos, Ghosts, score
    #deplacement Pacman
    L = PacManPossibleMove()
    choix = random.randrange(len(L))
@@ -344,6 +324,13 @@ def IAPacman():
          if   x % 3 == 1 : info = "+∞"
          elif x % 3 == 2 : info = ""
          SetInfo1(x,y,info)
+   
+         # Si Pac-Man se trouve sur une case contenant une Pac-gomme
+         # On retire la Pac-gomme
+         # +100 pour chaque pac-gomme mangé
+         if GUM[PacManPos[0]][PacManPos[1]] == 1:
+            GUM[PacManPos[0]][PacManPos[1]] = 0
+            score += 100 
    
  
    
@@ -363,18 +350,12 @@ def IAGhosts():
 
 iteration = 0
 def PlayOneTurn():
-   global iteration, score
+   global iteration
    
    if not PAUSE_FLAG : 
       iteration += 1
       if iteration % 2 == 0 :   
          IAPacman()
-         # Si Pac-Man se trouve sur une case contenant une Pac-gomme
-         # On retire la Pac-gomme
-         # +100 pour chaque pac-gomme mangé
-         if GUM[PacManPos[0]][PacManPos[1]] == 1:
-            GUM[PacManPos[0]][PacManPos[1]] = 0
-            score += 100 
       else:                     
          IAGhosts()
    
