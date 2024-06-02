@@ -22,6 +22,7 @@ def CreateArray(L):
    T = T.transpose()  ## ainsi, on peut écrire TBL[x][y]
    return T
 
+# labyrinthe de jeu
 TBL = CreateArray([
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         [1,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
@@ -66,11 +67,62 @@ Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "red"   ]     )
 score = 0  
 
 
-# IA PACMAN
+### 3.IA PACMAN
 
-# Définition des constantes
-G = 1000  # Valeur pour les murs
-M = LARGEUR * HAUTEUR  # Valeur pour les espaces vides
+G = 900  # Valeur pour les murs d'une valeur très grande
+M = LARGEUR * HAUTEUR  # Valeur des cases du parcours initialisées à une valeur M correspondant à la surface totale labyrinthe 
+DST = np.zeros(TBL.shape, dtype=np.int32) # distances des cases
+
+
+# initialisation de la carte des distances 
+def carte_init():
+   #global G, M, DST
+
+   for x in range(LARGEUR):
+      for y in range(HAUTEUR):
+
+         if TBL[x][y] == 1:
+            DST[x][y] = G
+         elif GUM[x][y] == 1:
+            DST[x][y] = 0
+         else:
+            DST[x][y] = M
+
+   return DST
+
+DST = carte_init()
+
+
+# recalcule de la carte des distances 
+
+WAY = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+
+def recalcul_de_la_carte():
+   # global DST, WAY, G, M
+
+   Maj = True
+   # Continue tant qu'il y a des mises à jour
+   while Maj:
+      Maj = False
+      
+      # Parcourt le tableau en évitant les bords, qui sont des murs
+      for y in range(1, HAUTEUR - 1):
+         for x in range(1, LARGEUR - 1):
+               # Si la case n'est pas un mur
+               if DST[x][y] != G:
+                  # Calcule les coordonnées des voisins valides
+                  voisins = [(x + dx, y + dy) for dx, dy in WAY 
+                              if 0 <= x + dx < LARGEUR and 0 <= y + dy < HAUTEUR]
+
+                  # Calcule la valeur minimale parmi les voisins
+                  valeur_min = min(DST[nx][ny] for nx, ny in voisins)
+
+                  # Si la distance actuelle est plus grande que la distance minimale + 1
+                  if DST[x][y] > valeur_min + 1:
+                     # Met à jour la distance de la case
+                     DST[x][y] = valeur_min + 1
+                     # Indique qu'il y a eu une mise à jour
+                     Maj = True
 
 
 
@@ -99,6 +151,9 @@ def SetInfo2(x,y,info):
    if x >= LTBL : return
    if y >= LTBL : return
    TBL2[x][y] = info
+
+
+print(DST)
 
 
 
@@ -293,13 +348,26 @@ AfficherPage(0)
 
       
 def PacManPossibleMove():
-   L = []
-   x,y = PacManPos
-   if ( TBL[x  ][y-1] == 0 ): L.append((0,-1))
-   if ( TBL[x  ][y+1] == 0 ): L.append((0, 1))
-   if ( TBL[x+1][y  ] == 0 ): L.append(( 1,0))
-   if ( TBL[x-1][y  ] == 0 ): L.append((-1,0))
-   return L
+   #L = []
+   #x,y = PacManPos
+   #if ( TBL[x  ][y-1] == 0 ): L.append((0,-1))
+   #if ( TBL[x  ][y+1] == 0 ): L.append((0, 1))
+   #if ( TBL[x+1][y  ] == 0 ): L.append(( 1,0))
+   #if ( TBL[x-1][y  ] == 0 ): L.append((-1,0))
+   #return L
+
+   global WAY # Liste des déplacements possibles [(0,-1), (0,1), (1,0), (-1,0)]
+   moves = []
+   
+   # Calculer les positions adjacentes en fonction de la position actuelle et des déplacements possibles
+   for dx, dy in WAY:
+      nx = PacManPos[0] + dx
+      ny = PacManPos[1] + dy
+      if TBL[nx][ny] == 0:  # Verifier si le mouvement est possible (pas un mur)
+         moves.append((dx, dy))
+
+   return moves
+
    
 def GhostsPossibleMove(x,y):
    L = []
@@ -310,29 +378,38 @@ def GhostsPossibleMove(x,y):
    return L
    
 def IAPacman():
-   global PacManPos, Ghosts, score
-   #deplacement Pacman
-   L = PacManPossibleMove()
-   choix = random.randrange(len(L))
-   PacManPos[0] += L[choix][0]
-   PacManPos[1] += L[choix][1]
+   global PacManPos, Ghosts, score, DST
+
+   # Deplacement Pacman
+   possible_moves = PacManPossibleMove()
    
-   # juste pour montrer comment on se sert de la fonction SetInfo1
+   # Selectionne le mouvement avec la distance minimale
+   min_distance = float('inf')
+   best_move = None
+
+   for move in possible_moves:
+      nx, ny = PacManPos[0] + move[0], PacManPos[1] + move[1]
+      if DST[nx][ny] < min_distance:
+         min_distance = DST[nx][ny]
+         best_move = move
+
+   if best_move:
+      PacManPos[0] += best_move[0]
+      PacManPos[1] += best_move[1]
+
+   # Si Pac-Man se trouve sur une case avec une Pac-gomme, la retire
+   # Ajoute +100 pour chaque Pac-gomme mangée
+   if GUM[PacManPos[0]][PacManPos[1]] == 1:
+      GUM[PacManPos[0]][PacManPos[1]] = 0
+      score += 100 
+      DST = carte_init()
+      recalcul_de_la_carte()
+
+   # Juste pour montrer comment on se sert de la fonction SetInfo1
    for x in range(LARGEUR):
       for y in range(HAUTEUR):
-         info = x
-         if   x % 3 == 1 : info = "+∞"
-         elif x % 3 == 2 : info = ""
-         SetInfo1(x,y,info)
-   
-         # Si Pac-Man se trouve sur une case contenant une Pac-gomme
-         # On retire la Pac-gomme
-         # +100 pour chaque pac-gomme mangé
-         if GUM[PacManPos[0]][PacManPos[1]] == 1:
-            GUM[PacManPos[0]][PacManPos[1]] = 0
-            score += 100 
-   
- 
+         SetInfo1(x, y, DST[x][y])
+
    
 def IAGhosts():
    #deplacement Fantome
@@ -342,8 +419,6 @@ def IAGhosts():
       F[0] += L[choix][0]
       F[1] += L[choix][1]
       
-  
- 
 
  
 #  Boucle principale de votre jeu appelée toutes les 500ms
@@ -360,16 +435,11 @@ def PlayOneTurn():
          IAGhosts()
    
    Affiche(PacmanColor = "yellow", message = "message")  
- 
- 
+
+
+
+
 ###########################################:
 #  demarrage de la fenetre - ne pas toucher
 
 Window.mainloop()
-
- 
-   
-   
-    
-   
-   
