@@ -40,6 +40,9 @@ TBL = CreateArray([
 HAUTEUR = TBL.shape [1]      
 LARGEUR = TBL.shape [0]  
 
+# Liste des déplacements possibles [(0,-1), (0,1), (1,0), (-1,0)]
+Direction = [(0, 1), (1, 0), (0, -1), (-1, 0)] 
+
 # placements des pacgums et des fantomes
 
 def PlacementsGUM():  # placements des pacgums
@@ -57,10 +60,10 @@ GUM = PlacementsGUM()
 PacManPos = [5,5]
 
 Ghosts  = []
-Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "pink"  ]   )
-Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "orange"] )
-Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "cyan"  ]   )
-Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "red"   ]     )         
+Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "pink"   ,random.choice(Direction)]  )
+Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "orange" ,random.choice(Direction)]  )
+Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "cyan"   ,random.choice(Direction)]  )
+Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "red"    ,random.choice(Direction)]  )         
 
 
 # variable pour le score
@@ -71,34 +74,33 @@ score = 0
 
 G = 900  # Valeur pour les murs d'une valeur très grande
 M = LARGEUR * HAUTEUR  # Valeur des cases du parcours initialisées à une valeur M correspondant à la surface totale labyrinthe 
-DST = np.zeros(TBL.shape, dtype=np.int32) # distances des cases
+Distances = np.zeros(TBL.shape, dtype=np.int32) # distances des cases
 
 
 # initialisation de la carte des distances 
 def carte_init():
-   #global G, M, DST
+   #global G, M, Distances
 
    for x in range(LARGEUR):
       for y in range(HAUTEUR):
 
          if TBL[x][y] == 1:
-            DST[x][y] = G
+            Distances[x][y] = G
          elif GUM[x][y] == 1:
-            DST[x][y] = 0
+            Distances[x][y] = 0
          else:
-            DST[x][y] = M
+            Distances[x][y] = M
 
-   return DST
+   return Distances
 
-DST = carte_init()
+Distances = carte_init()
 
 
 # recalcule de la carte des distances 
 
-WAY = [(0, 1), (1, 0), (0, -1), (-1, 0)]
 
 def recalcul_de_la_carte():
-   # global DST, WAY, G, M
+   # global Distances, Direction, G, M
 
    Maj = True
    # Continue tant qu'il y a des mises à jour
@@ -109,18 +111,18 @@ def recalcul_de_la_carte():
       for y in range(1, HAUTEUR - 1):
          for x in range(1, LARGEUR - 1):
                # Si la case n'est pas un mur
-               if DST[x][y] != G:
+               if Distances[x][y] != G:
                   # Calcule les coordonnées des voisins valides
-                  voisins = [(x + dx, y + dy) for dx, dy in WAY 
+                  voisins = [(x + dx, y + dy) for dx, dy in Direction 
                               if 0 <= x + dx < LARGEUR and 0 <= y + dy < HAUTEUR]
 
                   # Calcule la valeur minimale parmi les voisins
-                  valeur_min = min(DST[nx][ny] for nx, ny in voisins)
+                  valeur_min = min(Distances[nx][ny] for nx, ny in voisins)
 
                   # Si la distance actuelle est plus grande que la distance minimale + 1
-                  if DST[x][y] > valeur_min + 1:
+                  if Distances[x][y] > valeur_min + 1:
                      # Met à jour la distance de la case
-                     DST[x][y] = valeur_min + 1
+                     Distances[x][y] = valeur_min + 1
                      # Indique qu'il y a eu une mise à jour
                      Maj = True
 
@@ -153,7 +155,7 @@ def SetInfo2(x,y,info):
    TBL2[x][y] = info
 
 
-print(DST)
+print(Distances)
 
 
 
@@ -348,19 +350,11 @@ AfficherPage(0)
 
       
 def PacManPossibleMove():
-   #L = []
-   #x,y = PacManPos
-   #if ( TBL[x  ][y-1] == 0 ): L.append((0,-1))
-   #if ( TBL[x  ][y+1] == 0 ): L.append((0, 1))
-   #if ( TBL[x+1][y  ] == 0 ): L.append(( 1,0))
-   #if ( TBL[x-1][y  ] == 0 ): L.append((-1,0))
-   #return L
-
-   global WAY # Liste des déplacements possibles [(0,-1), (0,1), (1,0), (-1,0)]
+   global Direction 
    moves = []
    
    # Calculer les positions adjacentes en fonction de la position actuelle et des déplacements possibles
-   for dx, dy in WAY:
+   for dx, dy in Direction:
       nx = PacManPos[0] + dx
       ny = PacManPos[1] + dy
       if TBL[nx][ny] == 0:  # Verifier si le mouvement est possible (pas un mur)
@@ -369,16 +363,44 @@ def PacManPossibleMove():
    return moves
 
    
-def GhostsPossibleMove(x,y):
-   L = []
-   if ( TBL[x  ][y-1] == 2 ): L.append((0,-1))
-   if ( TBL[x  ][y+1] == 2 ): L.append((0, 1))
-   if ( TBL[x+1][y  ] == 2 ): L.append(( 1,0))
-   if ( TBL[x-1][y  ] == 2 ): L.append((-1,0))
-   return L
+def GhostsPossibleMove(x, y, directionActuelle):
+   #global TBL
+
+   # Calculer les coordonnées de la prochaine case dans la direction actuelle pour un couloir
+   nx = x + directionActuelle[0]
+   ny = y + directionActuelle[1]
+
+   # Liste des directions disponibles
+   directionsDisponible = []
+
+   # Si la case suivante est un mur, ajouter la direction opposée à la liste des directions disponibles
+   if TBL[nx][ny] == 1:
+      directionsDisponible.append((-directionActuelle[0], -directionActuelle[1]))
+
+   # Si le fantôme se déplace verticalement
+   if directionActuelle[0] == 0:
+      if TBL[x + 1][y] != 1:
+         directionsDisponible.append((1, 0))
+      if TBL[x - 1][y] != 1:
+         directionsDisponible.append((-1, 0))
+   # Si le fantôme se déplace horizontalement
+   elif directionActuelle[1] == 0:
+      if TBL[x][y + 1] != 1:
+         directionsDisponible.append((0, 1))
+      if TBL[x][y - 1] != 1:
+         directionsDisponible.append((0, -1))
+
+   # Si au moins une direction est disponible, en choisir une au hasard 
+   # Sinon continuer dans la direction actuelle
+   if directionsDisponible:
+      return random.choice(directionsDisponible)
+   else:
+      return directionActuelle
+
+
    
 def IAPacman():
-   global PacManPos, Ghosts, score, DST
+   global PacManPos, Ghosts, score, Distances
 
    # Deplacement Pacman
    possible_moves = PacManPossibleMove()
@@ -389,8 +411,8 @@ def IAPacman():
 
    for move in possible_moves:
       nx, ny = PacManPos[0] + move[0], PacManPos[1] + move[1]
-      if DST[nx][ny] < min_distance:
-         min_distance = DST[nx][ny]
+      if Distances[nx][ny] < min_distance:
+         min_distance = Distances[nx][ny]
          best_move = move
 
    if best_move:
@@ -402,22 +424,35 @@ def IAPacman():
    if GUM[PacManPos[0]][PacManPos[1]] == 1:
       GUM[PacManPos[0]][PacManPos[1]] = 0
       score += 100 
-      DST = carte_init()
+      Distances = carte_init()
       recalcul_de_la_carte()
 
    # Juste pour montrer comment on se sert de la fonction SetInfo1
    for x in range(LARGEUR):
       for y in range(HAUTEUR):
-         SetInfo1(x, y, DST[x][y])
+         SetInfo1(x, y, Distances[x][y])
 
    
 def IAGhosts():
-   #deplacement Fantome
+   #global Direction
+
    for F in Ghosts:
-      L = GhostsPossibleMove(F[0],F[1])
-      choix = random.randrange(len(L))
-      F[0] += L[choix][0]
-      F[1] += L[choix][1]
+      # Calculer le prochain mouvement possible pour le fantôme actuel
+      move = GhostsPossibleMove(F[0], F[1], F[3])
+      
+      # Mettre à jour la position du fantôme avec le mouvement calculé
+      F[0] += move[0]
+      F[1] += move[1]
+      
+      # Mettre à jour la direction actuelle du fantôme avec le nouveau mouvement
+      F[3] = move
+
+   # Vérification de la collision avec les fantômes
+   for F in Ghosts:
+      if [F[0], F[1]] == PacManPos:
+         print("Collision avec un fantôme!")
+         global PAUSE_FLAG
+         PAUSE_FLAG = True
       
 
  
