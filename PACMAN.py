@@ -52,6 +52,13 @@ def PlacementsGUM():  # placements des pacgums
       for y in range(HAUTEUR):
          if ( TBL[x][y] == 0):
             GUM[x][y] = 1
+   
+
+   # placement des super pacgommes
+   super_pacgommes_positions = [(1, 1), (1, HAUTEUR-2), (LARGEUR-2, 1), (LARGEUR-2, HAUTEUR-2)]
+
+   for (x, y) in super_pacgommes_positions:
+      GUM[x][y] = 2
    return GUM
             
 GUM = PlacementsGUM()   
@@ -66,8 +73,10 @@ Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "cyan"   ,random.choice(Direction)]
 Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "red"    ,random.choice(Direction)]  )         
 
 
-# variable pour le score
+# variable pour le score, mode de chasse et durée de chasse
 score = 0  
+mode_chasse = False
+chasse_tour = 0
 
 
 ### 3.IA PACMAN
@@ -79,14 +88,14 @@ DISTANCES = np.zeros(TBL.shape, dtype=np.int32) # distances des cases
 
 # initialisation de la carte des distances 
 def carte_init():
-   #global G, M, Distances
+   global G, M, DISTANCES
 
    for x in range(LARGEUR):
       for y in range(HAUTEUR):
 
-         if TBL[x][y] == 1:
+         if TBL[x][y] == 1 :
             DISTANCES[x][y] = G
-         elif GUM[x][y] == 1:
+         elif GUM[x][y] == 1 or GUM[x][y] == 2:
             DISTANCES[x][y] = 0
          else:
             DISTANCES[x][y] = M
@@ -333,7 +342,11 @@ def Affiche(PacmanColor,message):
             yy = To(y)
             e = 5
             canvas.create_oval(xx-e,yy-e,xx+e,yy+e,fill="orange")
-            
+         if ( GUM[x][y] == 2):
+            xx = To(x) 
+            yy = To(y)
+            e = 7
+            canvas.create_oval(xx-e,yy-e,xx+e,yy+e,fill="green")
    #extra info
    for x in range(LARGEUR):
       for y in range(HAUTEUR):
@@ -453,7 +466,7 @@ def GhostsPossibleMove(x, y, directionActuelle):
 
    
 def IAPacman():
-   global PacManPos, Ghosts, score, DISTANCES,DISTANCES_GHOST
+   global PacManPos, Ghosts, score, DISTANCES,DISTANCES_GHOST, mode_chasse, chasse_tour
 
    # Deplacement Pacman
    possible_moves = PacManPossibleMove()
@@ -476,6 +489,21 @@ def IAPacman():
          PacManPos[0] += best_move[0]
          PacManPos[1] += best_move[1]
 
+   elif mode_chasse:
+      # Mode chasse - Pac-Man doit se diriger vers le fantôme le plus proche
+      min_distance_ghost = float('inf')
+      best_move = None
+
+      for move in possible_moves:
+         nx, ny = PacManPos[0] + move[0], PacManPos[1] + move[1]
+         if DISTANCES_GHOST[nx][ny] < min_distance_ghost:
+               min_distance_ghost = DISTANCES_GHOST[nx][ny]
+               best_move = move
+
+      if best_move:
+         PacManPos[0] += best_move[0]
+         PacManPos[1] += best_move[1]      
+   
    else:
       # Mode fuite
       max_distance = -1
@@ -498,6 +526,21 @@ def IAPacman():
       score += 100 
       DISTANCES = carte_init()
 
+   # Si Pac-Man se trouve sur une case avec une super Pac-gomme,la retire
+   # Activer le mode chasse
+
+   if GUM[PacManPos[0]][PacManPos[1]] == 2:
+      GUM[PacManPos[0]][PacManPos[1]] = 0
+      score += 500 
+      mode_chasse = True
+      chasse_tour = 16
+      DISTANCES = carte_init()
+
+   if chasse_tour > 0:
+        chasse_tour = chasse_tour - 1
+   else:
+        chasse_tour = False
+
    recalcul_de_la_carte()
    # Juste pour montrer comment on se sert de la fonction SetInfo1
    for x in range(LARGEUR):
@@ -507,7 +550,7 @@ def IAPacman():
 
    
 def IAGhosts():
-   global Direction
+   global Direction, score
 
    for F in Ghosts:
       # Calculer le prochain mouvement possible pour le fantôme actuel
@@ -522,10 +565,13 @@ def IAGhosts():
 
    # Vérification de la collision avec les fantômes
    for F in Ghosts:
-      if [F[0], F[1]] == PacManPos:
+      if [F[0], F[1]] == PacManPos and not mode_chasse:
          print("Collision avec un fantôme!")
          global PAUSE_FLAG
          PAUSE_FLAG = True
+      elif [F[0], F[1]] == PacManPos and mode_chasse :
+         F[0], F[1], F[3] = LARGEUR // 2, HAUTEUR // 2, (0, 1)
+         score += 2000
    
    carte_init_fantomes()
    recalcule_de_la_carte_des_fantomes()
@@ -538,14 +584,15 @@ iteration = 0
 def PlayOneTurn():
    global iteration
    
-   if not PAUSE_FLAG : 
+   if not PAUSE_FLAG: 
       iteration += 1
-      if iteration % 2 == 0 :   
+      if iteration % 2 == 0:   
          IAPacman()
       else:                     
          IAGhosts()
    
-   Affiche(PacmanColor = "yellow", message = "message")  
+   pacman_color = "green" if mode_chasse else "yellow"
+   Affiche(PacmanColor=pacman_color, message="message") 
 
 
 
