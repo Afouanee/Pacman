@@ -146,7 +146,8 @@ def carte_init_fantomes():
 
    # Marque les positions des fantômes dans le tableau GHOST
    for F in Ghosts:
-      GHOST[F[0]][F[1]] = 1
+      if TBL[F[0]][F[1]] != 2:  # fantôme pas présent dans la maison
+         GHOST[F[0]][F[1]] = 1
 
    # Initialisation de la carte des distances aux fantômes
    for x in range(LARGEUR):
@@ -539,7 +540,7 @@ def IAPacman():
    if chasse_tour > 0:
         chasse_tour = chasse_tour - 1
    else:
-        chasse_tour = False
+        mode_chasse = False
 
    recalcul_de_la_carte()
    # Juste pour montrer comment on se sert de la fonction SetInfo1
