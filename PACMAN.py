@@ -74,7 +74,7 @@ score = 0
 
 G = 900  # Valeur pour les murs d'une valeur très grande
 M = LARGEUR * HAUTEUR  # Valeur des cases du parcours initialisées à une valeur M correspondant à la surface totale labyrinthe 
-Distances = np.zeros(TBL.shape, dtype=np.int32) # distances des cases
+DISTANCES = np.zeros(TBL.shape, dtype=np.int32) # distances des cases
 
 
 # initialisation de la carte des distances 
@@ -85,22 +85,21 @@ def carte_init():
       for y in range(HAUTEUR):
 
          if TBL[x][y] == 1:
-            Distances[x][y] = G
+            DISTANCES[x][y] = G
          elif GUM[x][y] == 1:
-            Distances[x][y] = 0
+            DISTANCES[x][y] = 0
          else:
-            Distances[x][y] = M
+            DISTANCES[x][y] = M
 
-   return Distances
+   return DISTANCES
 
-Distances = carte_init()
+DISTANCES = carte_init()
 
 
 # recalcule de la carte des distances 
 
-
 def recalcul_de_la_carte():
-   # global Distances, Direction, G, M
+   global DISTANCES, Direction, G, M
 
    Maj = True
    # Continue tant qu'il y a des mises à jour
@@ -111,20 +110,74 @@ def recalcul_de_la_carte():
       for y in range(1, HAUTEUR - 1):
          for x in range(1, LARGEUR - 1):
                # Si la case n'est pas un mur
-               if Distances[x][y] != G:
+               if DISTANCES[x][y] != G:
                   # Calcule les coordonnées des voisins valides
                   voisins = [(x + dx, y + dy) for dx, dy in Direction 
                               if 0 <= x + dx < LARGEUR and 0 <= y + dy < HAUTEUR]
 
                   # Calcule la valeur minimale parmi les voisins
-                  valeur_min = min(Distances[nx][ny] for nx, ny in voisins)
+                  valeur_min = min(DISTANCES[nx][ny] for nx, ny in voisins)
 
                   # Si la distance actuelle est plus grande que la distance minimale + 1
-                  if Distances[x][y] > valeur_min + 1:
+                  if DISTANCES[x][y] > valeur_min + 1:
                      # Met à jour la distance de la case
-                     Distances[x][y] = valeur_min + 1
+                     DISTANCES[x][y] = valeur_min + 1
                      # Indique qu'il y a eu une mise à jour
                      Maj = True
+
+# Initialisation des tableaux pour la position des fantômes et les distances aux fantômes
+GHOST = np.zeros(TBL.shape, dtype=np.int32)
+DISTANCES_GHOST = np.zeros(TBL.shape, dtype=np.int32)
+
+def carte_init_fantomes():
+   global DISTANCES_GHOST, GHOST
+
+   # Réinitialise le tableau des positions des fantômes
+   GHOST = np.zeros(TBL.shape, dtype=np.int32)
+
+   # Marque les positions des fantômes dans le tableau GHOST
+   for F in Ghosts:
+      GHOST[F[0]][F[1]] = 1
+
+   # Initialisation de la carte des distances aux fantômes
+   for x in range(LARGEUR):
+      for y in range(HAUTEUR):
+         if TBL[x][y] == 1:  # Mur
+               DISTANCES_GHOST[x][y] = G
+         elif GHOST[x][y] == 1:  # Fantôme
+               DISTANCES_GHOST[x][y] = 0
+         else:  # Autre
+               DISTANCES_GHOST[x][y] = M
+
+   return DISTANCES_GHOST
+
+def recalcule_de_la_carte_des_fantomes():
+   global DISTANCES_GHOST, GHOST
+
+   anyUpdate = True
+
+   # Boucle jusqu'à ce qu'il n'y ait plus de mise à jour
+   while anyUpdate:
+      anyUpdate = False
+      # Parcourt le tableau en évitant les bords, qui sont des murs
+      for y in range(1, HAUTEUR - 1):
+         for x in range(1, LARGEUR - 1):
+               # Si la case n'est pas un mur
+               if DISTANCES_GHOST[x][y] != G:
+                  # Calcule les coordonnées des voisins valides
+                  voisins = [(x + dx, y + dy) for dx, dy in Direction 
+                              if 0 <= x + dx < LARGEUR and 0 <= y + dy < HAUTEUR]
+
+                  # Calcule la valeur minimale parmi les voisins
+                  valeur_min = min(DISTANCES_GHOST[nx][ny] for nx, ny in voisins)
+
+                  # Si la distance actuelle est plus grande que la distance minimale + 1
+                  if DISTANCES_GHOST[x][y] > valeur_min + 1:
+                     # Met à jour la distance de la case
+                     DISTANCES_GHOST[x][y] = valeur_min + 1
+                     # Indique qu'il y a eu une mise à jour
+                     anyUpdate = True
+
 
 
 
@@ -155,7 +208,7 @@ def SetInfo2(x,y,info):
    TBL2[x][y] = info
 
 
-print(Distances)
+print(DISTANCES)
 
 
 
@@ -400,7 +453,7 @@ def GhostsPossibleMove(x, y, directionActuelle):
 
    
 def IAPacman():
-   global PacManPos, Ghosts, score, Distances
+   global PacManPos, Ghosts, score, DISTANCES
 
    # Deplacement Pacman
    possible_moves = PacManPossibleMove()
@@ -411,8 +464,8 @@ def IAPacman():
 
    for move in possible_moves:
       nx, ny = PacManPos[0] + move[0], PacManPos[1] + move[1]
-      if Distances[nx][ny] < min_distance:
-         min_distance = Distances[nx][ny]
+      if DISTANCES[nx][ny] < min_distance:
+         min_distance = DISTANCES[nx][ny]
          best_move = move
 
    if best_move:
@@ -424,17 +477,18 @@ def IAPacman():
    if GUM[PacManPos[0]][PacManPos[1]] == 1:
       GUM[PacManPos[0]][PacManPos[1]] = 0
       score += 100 
-      Distances = carte_init()
-      recalcul_de_la_carte()
+      DISTANCES = carte_init()
 
+   recalcul_de_la_carte()
    # Juste pour montrer comment on se sert de la fonction SetInfo1
    for x in range(LARGEUR):
       for y in range(HAUTEUR):
-         SetInfo1(x, y, Distances[x][y])
+         SetInfo1(x, y, DISTANCES[x][y])
+         SetInfo2(x, y, DISTANCES_GHOST[x][y])
 
    
 def IAGhosts():
-   #global Direction
+   global Direction
 
    for F in Ghosts:
       # Calculer le prochain mouvement possible pour le fantôme actuel
@@ -453,6 +507,9 @@ def IAGhosts():
          print("Collision avec un fantôme!")
          global PAUSE_FLAG
          PAUSE_FLAG = True
+   
+   carte_init_fantomes()
+   recalcule_de_la_carte_des_fantomes()
       
 
  
