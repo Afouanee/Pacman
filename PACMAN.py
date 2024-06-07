@@ -417,7 +417,7 @@ def PacManPossibleMove():
 
    
 def GhostsPossibleMove(x, y, directionActuelle):
-   #global TBL
+   global TBL
 
    # Calculer les coordonnées de la prochaine case dans la direction actuelle pour un couloir
    nx = x + directionActuelle[0]
@@ -453,24 +453,43 @@ def GhostsPossibleMove(x, y, directionActuelle):
 
    
 def IAPacman():
-   global PacManPos, Ghosts, score, DISTANCES
+   global PacManPos, Ghosts, score, DISTANCES,DISTANCES_GHOST
 
    # Deplacement Pacman
    possible_moves = PacManPossibleMove()
    
-   # Selectionne le mouvement avec la distance minimale
-   min_distance = float('inf')
-   best_move = None
+   # Vérifier la distance aux fantômes
+   distance_fantome_min = min(DISTANCES_GHOST[PacManPos[0] + move[0], PacManPos[1] + move[1]] for move in possible_moves)
 
-   for move in possible_moves:
-      nx, ny = PacManPos[0] + move[0], PacManPos[1] + move[1]
-      if DISTANCES[nx][ny] < min_distance:
-         min_distance = DISTANCES[nx][ny]
-         best_move = move
+   if distance_fantome_min > 3:
+      # Mode recherche de Pac-gommes
+      min_distance = float('inf')
+      best_move = None
 
-   if best_move:
-      PacManPos[0] += best_move[0]
-      PacManPos[1] += best_move[1]
+      for move in possible_moves:
+         nx, ny = PacManPos[0] + move[0], PacManPos[1] + move[1]
+         if DISTANCES[nx][ny] < min_distance:
+               min_distance = DISTANCES[nx][ny]
+               best_move = move
+
+      if best_move:
+         PacManPos[0] += best_move[0]
+         PacManPos[1] += best_move[1]
+
+   else:
+      # Mode fuite
+      max_distance = -1
+      best_move = None
+
+      for move in possible_moves:
+         nx, ny = PacManPos[0] + move[0], PacManPos[1] + move[1]
+         if DISTANCES_GHOST[nx][ny] > max_distance:
+               max_distance = DISTANCES_GHOST[nx][ny]
+               best_move = move
+
+      if best_move:
+         PacManPos[0] += best_move[0]
+         PacManPos[1] += best_move[1]
 
    # Si Pac-Man se trouve sur une case avec une Pac-gomme, la retire
    # Ajoute +100 pour chaque Pac-gomme mangée
