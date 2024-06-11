@@ -489,6 +489,11 @@ def IAPacman():
       if best_move:
          PacManPos[0] += best_move[0]
          PacManPos[1] += best_move[1]
+      else:
+         # Si aucun mouvement trouvé, choisir un mouvement aléatoire parmi les mouvements possibles
+         random_move = random.choice(possible_moves)
+         PacManPos[0] += random_move[0]
+         PacManPos[1] += random_move[1]
 
    elif mode_chasse:
       # Mode chasse - Pac-Man doit se diriger vers le fantôme le plus proche
@@ -503,7 +508,13 @@ def IAPacman():
 
       if best_move:
          PacManPos[0] += best_move[0]
-         PacManPos[1] += best_move[1]      
+         PacManPos[1] += best_move[1]  
+      else:
+         # Si aucun mouvement trouvé, choisir un mouvement aléatoire parmi les mouvements possibles
+         random_move = random.choice(possible_moves)
+         PacManPos[0] += random_move[0]
+         PacManPos[1] += random_move[1]
+          
    
    else:
       # Mode fuite
@@ -519,6 +530,11 @@ def IAPacman():
       if best_move:
          PacManPos[0] += best_move[0]
          PacManPos[1] += best_move[1]
+      else:
+         # Si aucun mouvement trouvé, choisir un mouvement aléatoire parmi les mouvements possibles
+         random_move = random.choice(possible_moves)
+         PacManPos[0] += random_move[0]
+         PacManPos[1] += random_move[1]
 
    # Si Pac-Man se trouve sur une case avec une Pac-gomme, la retire
    # Ajoute +100 pour chaque Pac-gomme mangée
